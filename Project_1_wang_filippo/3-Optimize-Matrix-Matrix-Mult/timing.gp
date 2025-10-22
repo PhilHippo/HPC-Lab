@@ -1,0 +1,21 @@
+set title "nxn matrix multiplication on single-core Intel Xeon E5-2650"
+set xlabel "Matrix size (n)"
+set ylabel "Performance (GFlops/s)"
+set grid
+set logscale y 10
+
+set terminal pdf
+set output "timing.pdf"
+
+plot "timing_basic_dgemm.data"   using 2:4 title "Naive dgemm"     \
+                                 with linespoints,                 \
+     "timing_blocked_dgemm_LR_LU.data" using 2:4 title "Blocked dgemm LR + LU"   \
+                             with linespoints,                 \
+     "timing_blocked_dgemm_LR_DP.data" using 2:4 title "Blocked dgemm LR + DP"   \
+                             with linespoints,                 \
+     "timing_blocked_dgemm_LR.data" using 2:4 title "Blocked dgemm LR"   \
+                                 with linespoints,                 \
+     "timing_blocked_dgemm-naive.data" using 2:4 title "Blocked naive dgemm"   \
+                                 with linespoints,                 \
+     "timing_blas_dgemm.data"    using 2:4 title "Ref. BLAS dgemm" \
+                                 with linespoints
