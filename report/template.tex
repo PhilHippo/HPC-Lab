@@ -1,0 +1,38 @@
+\documentclass[unicode,11pt,a4paper,oneside,numbers=endperiod,openany]{scrartcl}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{url}
+\usepackage{amsmath} 
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{listings}
+\usepackage{minted}
+%\usepackage[backend=biber,style=numeric,url=true,doi=false,isbn=false]{biblatex}
+%\addbibresource{bib.bib}
+
+\newcommand{\codehl}[1]{\colorbox{gray!10}{\texttt{#1}}}
+\input{assignment.sty}
+\begin{document}
+\setassignment
+
+\serieheader{High-Performance Computing Lab}{Institute of Computing}{Student: FILIPPO WANG}{}{Solution for Project 2}{}
+
+\assignmentpolicy
+This project introduces parallel programming using OpenMP. 
+\tableofcontents
+\newpage
+\section{Parallel reduction operations using OpenMP \texorpdfstring{\punkte{20}}{(20 Points)}}
+
+
+
+\section{The Mandelbrot set using OpenMP \texorpdfstring{\punkte{20}}{(20 Points)}}
+\section{Bug hunt \texorpdfstring{\punkte{15}}{(15 Points)}}
+\section{Parallel histogram calculation using OpenMP \texorpdfstring{\punkte{15}}{(15 Points)}}
+\section{Parallel loop dependencies with OpenMP \texorpdfstring{\punkte{15}}{(15 Points)}}
+\section{Quality of the Report \texorpdfstring{\punkte{15}}{(15 Points)}}
+
+\newpage
+\bibliographystyle{plainurl}
+\bibliography{bib}
+
+\end{document}
