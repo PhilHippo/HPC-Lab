@@ -8,24 +8,21 @@
 #include <fstream>
 
 #define NUM_ITERATIONS 100
-
-// Example benchmarks
-// 0.008s ~0.8MB
-// #define N 100000
-// 0.1s ~8MB
-// #define N 1000000
-// 1.1s ~80MB
-// #define N 10000000
-// 13s ~800MB
-// #define N 100000000
-// 127s 16GB
-//#define N 1000000000
 #define EPSILON 0.1
 
 using namespace std;
 
+// store benchmark results
+struct BenchmarkResult {
+  int N;
+  int num_threads;
+  double time_serial;
+  double time_reduction;
+  double time_critical;
+};
+
 // run dot product for given N and num_threads
-void run_benchmark(int N, int num_threads, ofstream& outfile) {
+BenchmarkResult run_benchmark(int N, int num_threads) {
   double time_serial, time_start = 0.0;
   double *a, *b;
 
@@ -44,7 +41,6 @@ void run_benchmark(int N, int num_threads, ofstream& outfile) {
   double time_red = 0;
   double time_critical = 0;
 
-  // Set number of threads
   omp_set_num_threads(num_threads);
 
   // Serial execution
@@ -66,12 +62,12 @@ void run_benchmark(int N, int num_threads, ofstream& outfile) {
       alpha_parallel += a[i] * b[i];
     }
   }
+  #pragma omp barrier
   time_red = wall_time() - time_start;
 
   // Parallel version using critical
-  int critical_iterations = (N > 1000000) ? 5 : 10;
   time_start = wall_time();
-  for (int iterations = 0; iterations < critical_iterations; iterations++) {
+  for (int iterations = 0; iterations < 5; iterations++) {
     alpha_parallel = 0.0;
     #pragma omp parallel for
     for (int i = 0; i < N; i++) {
@@ -79,7 +75,7 @@ void run_benchmark(int N, int num_threads, ofstream& outfile) {
       alpha_parallel += a[i] * b[i];
     }
   }
-  time_critical = wall_time() - time_start;
+  time_critical = (wall_time() - time_start) * 20; //manually multiplying the time taken to match the number of iterations
 
   if ((fabs(alpha_parallel - alpha) / fabs(alpha_parallel)) > EPSILON) {
     cout << "parallel reduction: " << alpha_parallel << ", serial: " << alpha
@@ -88,41 +84,62 @@ void run_benchmark(int N, int num_threads, ofstream& outfile) {
     exit(1);
   }
 
-  // Output for gnuplot
-  outfile << N << " " << num_threads << " " << time_serial << " " 
-          << time_red << " " << time_critical << endl;
-
   cout << "N=" << N << ", threads=" << num_threads 
        << ", serial=" << time_serial << "s, reduction=" << time_red 
        << "s, critical=" << time_critical << "s" << endl;
 
   delete[] a;
   delete[] b;
+  
+  BenchmarkResult result;
+  result.N = N;
+  result.num_threads = num_threads;
+  result.time_serial = time_serial;
+  result.time_reduction = time_red;
+  result.time_critical = time_critical;
+  
+  return result;
 }
 
 int main() {
   vector<int> N_values = {100000, 1000000, 10000000, 100000000, 1000000000};
-
   vector<int> thread_counts = {1, 2, 4, 8, 16, 20};
 
   // for gnuplot
   ofstream outfile("scaling.dat");
 
-  // Write header for gnuplot
-  outfile << "# N threads serial_time reduction_time critical_time speedup_reduction speedup_critical" << endl;
-
-  cout << "Starting strong scaling analysis..." << endl;
-  cout << "Vector lengths: ";
-  for (int n : N_values) cout << n << " ";
-  cout << endl;
-  cout << "Thread counts: ";
-  for (int t : thread_counts) cout << t << " ";
-  cout << endl; 
+  // Write headers
+  outfile << "# N threads serial_time reduction_time critical_time speedup_reduction speedup_critical efficiency_reduction efficiency_critical" << endl;
 
   // run for all combinations
   for (int N : N_values) {
+    vector<BenchmarkResult> results;
+    
+    // Collect all results for this problem size
     for (int threads : thread_counts) {
-      run_benchmark(N, threads, outfile);
+      results.push_back(run_benchmark(N, threads));
+    }
+    
+    // baseline (1 thread) times for speedup calculation
+    double baseline_reduction = results[0].time_reduction;
+    double baseline_critical = results[0].time_critical;
+    
+    // Write results with speedup and efficiency
+    for (const auto& res : results) {
+      double speedup_reduction = baseline_reduction / res.time_reduction;
+      double speedup_critical = baseline_critical / res.time_critical;
+      double efficiency_reduction = speedup_reduction / res.num_threads;
+      double efficiency_critical = speedup_critical / res.num_threads;
+      
+      outfile << res.N << " " 
+              << res.num_threads << " " 
+              << res.time_serial << " " 
+              << res.time_reduction << " " 
+              << res.time_critical << " "
+              << speedup_reduction << " "
+              << speedup_critical << " "
+              << efficiency_reduction << " "
+              << efficiency_critical << endl;
     }
     outfile << endl;
   }
