@@ -1,0 +1,15 @@
+source /apps/miniconda3/bin/activate
+conda activate /apps/miniconda3/envs/petsc/
+module load gcc openmpi
+export PETSC_DIR=/apps/miniconda3/envs/petsc
+module load py-pip
+pip install matplotlib scipy
+
+make
+
+# allocate 16 processes on 4 nodes with 4 processes each
+salloc -n 16 --nodes=4 --ntasks-per-node=4
+
+mpirun ./hello_petsc
+
+salloc -n 16 --nodes=4 --ntasks-per-node=4

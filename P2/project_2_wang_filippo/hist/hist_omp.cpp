@@ -33,11 +33,27 @@ int main() {
     dist[i] = 0;
   }
 
-  // TODO Parallelize the histogram computation
   time_start = walltime();
-  for (long i = 0; i < VEC_SIZE; ++i) {
-    dist[vec[i]]++;
+  
+  #pragma omp parallel
+  {
+    // Each thread gets its own private histogram
+    long thread_dist[BINS] = {0};
+    
+    #pragma omp for
+    for (long i = 0; i < VEC_SIZE; ++i) {
+      thread_dist[vec[i]]++;
+    }
+    
+    // Combine private histograms
+    #pragma omp critical
+    {
+      for (int i = 0; i < BINS; ++i) {
+        dist[i] += thread_dist[i];
+      }
+    }
   }
+  
   time_end = walltime();
 
   // Write results
